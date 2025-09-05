@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'knowledge',
     'ckeditor',
     "ckeditor_uploader", # para upload de imagens
+    'accounts.apps.AccountsConfig',
 ]
 
 MIDDLEWARE = [
