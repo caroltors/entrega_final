@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'knowledge',
     'ckeditor',
+    "ckeditor_uploader", # para upload de imagens
 ]
 
 MIDDLEWARE = [
@@ -122,3 +123,33 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Configurações do CKEditor
+CKEDITOR_CONFIGS = {
+    "default": {
+        "width": "100%",
+        "height": 0,
+        "extraPlugins": "autogrow,justify,pastefromword",
+        "autoGrow_minHeight": 400,
+        "autoGrow_maxHeight": 0,
+        "autoGrow_bottomSpace": 16,
+        "removePlugins": "elementspath,resize",
+        "toolbarCanCollapse": False,
+        "toolbar": [
+            {"name": "basicstyles", "items": ["Bold", "Italic", "Underline", "-", "RemoveFormat"]},
+            {"name": "paragraph", "items": ["NumberedList", "BulletedList", "-", "Outdent", "Indent", "-", "JustifyLeft","JustifyCenter","JustifyRight"]},
+            {"name": "links", "items": ["Link", "Unlink"]},
+            {"name": "insert", "items": ["Image", "Table", "HorizontalRule"]},
+            {"name": "styles", "items": ["Format"]},
+            {"name": "clipboard", "items": ["Undo", "Redo"]},
+        ],
+        "allowedContent": True,
+        "filebrowserUploadUrl": "/ckeditor/upload/",  
+        "filebrowserBrowseUrl": "/ckeditor/browse/",   
+    }
+}
+
+# Configurações para arquivos de mídia (imagens enviadas via CKEditor)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+CKEDITOR_UPLOAD_PATH = "uploads/"
