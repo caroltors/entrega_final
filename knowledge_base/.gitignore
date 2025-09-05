@@ -16,7 +16,7 @@ db.sqlite3
 # Arquivos de mídia (uploads de usuários)
 media/
 
-# Configurações do editor
+# Configurações do editor/IDE
 .vscode/
 .idea/
 *.swp
@@ -26,7 +26,6 @@ media/
 
 # Cache do Django
 *.pot
-*.pyc
 
 # Arquivos do sistema
 .DS_Store
