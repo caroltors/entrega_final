@@ -1,0 +1,179 @@
+{% extends "knowledge/base.html" %}
+
+{% block title %}
+  {% if view.object %}Editar: {{ view.object.title }}{% else %}Novo Artigo{% endif %} — Base de Conhecimento
+{% endblock %}
+
+{% block extra_head %}
+  {{ form.media }}
+  <style>
+    /* Container principal */
+    .kb-edit-shell{
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+      background: var(--kb-bg);
+      border: 1px solid var(--kb-border);
+      border-radius: 8px;
+    }
+
+    /* Título */
+    .kb-title-input{
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 2rem;
+      line-height: 1.2;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--kb-text);
+    }
+    .kb-title-input::placeholder{ color: #9aa3af; }
+
+    /* Subtítulo */
+    .kb-subtitle-input{
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 1rem;
+      color: var(--kb-muted);
+      border-bottom: 1px solid var(--kb-border);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+    }
+    .kb-subtitle-input::placeholder{ color: #b0b8c4; }
+
+    /* CKEditor */
+    .cke{ width: 100% !important; }
+    .cke_chrome{
+      border: 0 !important;
+      background: #fff !important;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .cke_top{
+      background: #f9fafb !important;
+      border-bottom: 1px solid var(--kb-border) !important;
+    }
+    .cke_contents{
+      background: #fff !important;
+      min-height: 400px;
+      padding: 16px !important;
+    }
+    .cke_editable{
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--kb-text);
+    }
+
+    /* Capa */
+    .kb-cover{
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 16px 0;
+    }
+    .kb-cover img{
+      max-height: 180px;
+      border-radius: 6px;
+      border: 1px solid var(--kb-border);
+    }
+
+    /* Botões */
+    .kb-actions{
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .btn-main {
+      background: var(--kb-dark);
+      color: #fff;
+      font-weight: 500;
+      border-radius: 6px;
+    }
+    .btn-main:hover {
+      background: #1a243b;
+      color: #fff;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <form method="post" enctype="multipart/form-data" class="kb-edit-shell" novalidate>
+    {% csrf_token %}
+
+    {{ form.title }}
+    {{ form.subtitle }}
+
+    <!-- Imagem de capa -->
+    <div class="kb-cover">
+        <label class="form-label fw-semibold">Imagem de capa (opcional)</label>
+        {% if view.object and view.object.cover_image %}
+            <div class="mb-2">
+            <img src="{{ view.object.cover_image.url }}" alt="Capa atual"
+                class="img-fluid rounded border" style="max-height:200px;">
+            </div>
+        {% endif %}
+        {{ form.cover_image }}
+        {% if form.cover_image.errors %}
+            {% for err in form.cover_image.errors %}
+            <div class="invalid-feedback d-block">{{ err }}</div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Conteúdo -->
+    <div class="mb-3">
+      {{ form.content }}
+      {% if form.content.errors %}
+        {% for err in form.content.errors %}
+          <div class="invalid-feedback d-block">{{ err }}</div>
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    <!-- Ações -->
+    <div class="kb-actions">
+      <button type="submit" class="btn btn-main">💾 Salvar</button>
+      <a href="{% if view.object %}{% url 'knowledge:page_detail' view.object.pk %}{% else %}{% url 'knowledge:pages_list' %}{% endif %}" 
+         class="btn btn-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_body %}
+<script>
+  (function(){
+    function resizeEditor(editor){
+      try {
+        // define altura mínima fixa inicial
+        editor.resize('100%', 500, true);
+
+        // remove overflow interno
+        var editable = editor.editable && editor.editable();
+        if (editable) {
+          editable.setStyle('overflow', 'visible');
+        }
+
+        // cresce conforme o conteúdo
+        editor.execCommand('autogrow');
+
+        // também reage a resize da janela
+        window.addEventListener('resize', function(){
+          editor.resize('100%', Math.max(500, window.innerHeight - 300), true);
+        });
+      } catch(e){}
+    }
+
+    if (window.CKEDITOR) {
+      CKEDITOR.on('instanceReady', function(evt){
+        resizeEditor(evt.editor);
+      });
+    }
+  })();
+</script>
+{% endblock %}
