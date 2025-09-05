@@ -22,6 +22,7 @@ from django.conf import settings
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("", include("knowledge.urls")),   # inclui as rotas do app knowledge
+    path("accounts/", include("accounts.urls")),  # inclui as rotas do app accounts
     path("ckeditor/", include("ckeditor_uploader.urls")), # rotas do CKEditor
 ]
 
