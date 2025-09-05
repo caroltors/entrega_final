@@ -1,0 +1,191 @@
+{% extends "knowledge/base.html" %}
+{% block title %}{% if is_first_time %}Completar perfil{% else %}Editar perfil{% endif %} — Base de Conhecimento{% endblock %}
+
+{% block extra_head %}
+<style>
+  .kb-card{ border:1px solid var(--kb-border); border-radius:12px; }
+  .kb-avatar-outer{ position: relative; width: 96px; margin: 0 auto; }
+  .kb-avatar-img,.kb-avatar-fallback{
+    width:96px;height:96px;border-radius:50%;object-fit:cover;
+    border:1px solid #e5e7eb;background:#f3f4f6;display:block;
+  }
+  .kb-avatar-action{
+    position:absolute; right:-6px; bottom:-6px;
+    border-radius:999px; padding:.35rem .55rem; font-size:.85rem;
+    background:var(--kb-dark); color:#fff; border:0;
+  }
+  .kb-avatar-action:hover{ background:#1a243b; color:#fff; }
+
+  /* campo “título” para nome/sobrenome */
+  .kb-title-input{
+    border:none; outline:none; background:transparent;
+    font-size:1.35rem; font-weight:700; width:100%;
+    border-bottom:1px solid var(--kb-border);
+    padding:4px 0; margin-bottom:6px;
+  }
+
+  /* username em “pill” sob o avatar */
+  .kb-username-pill input{
+    text-align:center;
+    padding:.35rem .6rem;
+    border-radius:999px;
+    width: 180px;
+    margin: .5rem auto 0;
+  }
+
+  /* Botões padrão */
+  .kb-btn-main {
+    background: var(--kb-dark);
+    color: #fff !important;  /* força branco */
+    font-weight: 500;
+    padding: .5rem 1rem;
+    border-radius: 6px;
+    border: none;
+    text-align: center;
+    transition: background .2s ease;
+    text-decoration: none !important;  /* remove sublinhado */
+    display: inline-block;
+  }
+  .kb-btn-main:hover { background: #1a243b; color:#fff; }
+
+  .kb-btn-secondary {
+    background: #6b7280;
+    color: #fff !important;
+    font-weight: 500;
+    padding: .5rem 1rem;
+    border-radius: 6px;
+    border: none;
+    text-align: center;
+    transition: background .2s ease;
+    text-decoration: none !important;
+    display: inline-block;
+  }
+  .kb-btn-secondary:hover { background: #4b5563; color:#fff; }
+
+    /* Esconde o bloco "Currently / Change / Clear" do Django */
+  .clearable-file-input{
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 900px;">
+
+  <h1 class="mb-3">{% if is_first_time %}Completar perfil{% else %}Editar perfil{% endif %}</h1>
+
+  {% if is_first_time %}
+    <div class="alert alert-info d-flex justify-content-between align-items-center">
+      <div><strong>Bem-vinda!</strong> Complete seu perfil para personalizar sua experiência.</div>
+      <a href="{% url 'accounts:profile' %}" class="btn btn-sm btn-outline-secondary">Pular</a>
+    </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="d-flex flex-column gap-3" novalidate>
+    {% csrf_token %}
+
+    <!-- Header: avatar + username + nome/sobrenome + email -->
+    <div class="kb-card bg-white shadow-sm p-4">
+      <div class="row g-3 align-items-start">
+        <div class="col-auto text-center">
+          <div class="kb-avatar-outer">
+            {% if request.user.profile.avatar %}
+              <img id="kbAvatarPreview" class="kb-avatar-img" src="{{ request.user.profile.avatar.url }}" alt="Avatar">
+            {% else %}
+              <div id="kbAvatarPreview" class="kb-avatar-fallback"></div>
+            {% endif %}
+            <button type="button" class="kb-avatar-action" id="kbPickAvatar" title="Alterar imagem">
+              <i class="bi bi-camera"></i>
+            </button>
+          </div>
+
+          <!-- username sob o avatar -->
+          <div class="kb-username-pill">
+            {{ uform.username }}  {# aqui vai aparecer o valor atual, sem placeholder forçado #}
+            {% for e in uform.username.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="row g-3">
+            <div class="col-md-6">
+              {{ uform.first_name }}
+              {% for e in uform.first_name.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              {{ uform.last_name }}
+              {% for e in uform.last_name.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-12">
+              {{ uform.email.label_tag }} {{ uform.email }}
+              {% for e in uform.email.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Perfil -->
+    <div class="kb-card bg-white shadow-sm p-4">
+      <h2 class="h6 text-muted mb-3">Perfil</h2>
+
+      {{ pform.avatar }}
+      {% for e in pform.avatar.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+
+      <div class="mb-3">
+        {{ pform.bio.label_tag }} {{ pform.bio }}
+        {% for e in pform.bio.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="mb-0">
+        {{ pform.birth_date.label_tag }} {{ pform.birth_date }}
+        {% for e in pform.birth_date.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+      </div>
+    </div>
+
+    <!-- Ações -->
+    <div class="d-flex flex-wrap gap-2">
+      <button class="kb-btn-main">{% if is_first_time %}Concluir{% else %}Salvar{% endif %}</button>
+      <a class="kb-btn-secondary" href="{% url 'accounts:profile' %}">Cancelar</a>
+      <a class="kb-btn-main ms-auto" href="{% url 'accounts:password_change' %}">
+        <i class="bi bi-key me-1"></i> Alterar senha
+      </a>
+    </div>
+  </form>
+</div>
+
+<script>
+  (function(){
+    const pickBtn = document.getElementById('kbPickAvatar');
+    const input   = document.getElementById('id_avatar');
+    const preview = document.getElementById('kbAvatarPreview');
+
+    if (pickBtn && input){ pickBtn.addEventListener('click', () => input.click()); }
+    if (input && preview){
+      input.addEventListener('change', function(){
+        const file = this.files && this.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+          if (preview.tagName === 'IMG'){ preview.src = e.target.result; }
+          else {
+            const img = document.createElement('img');
+            img.className = 'kb-avatar-img';
+            img.src = e.target.result;
+            preview.replaceWith(img);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  })();
+</script>
+{% endblock %}

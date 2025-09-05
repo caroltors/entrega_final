@@ -47,18 +47,18 @@
       text-underline-offset: 4px;
     }
 
-    /* ===== Barra de busca ===== */
+    /* ===== Barra de busca (ajustada) ===== */
     .kb-search-wrap{
       position: relative;
       display: inline-flex;
       align-items: center;
       gap: .25rem;
-      width: min(560px, 45vw);
-      height: 36px;
+      width: 240px;                /* antes min(560px, 45vw) */
+      height: 32px;                /* levemente menor */
       background: var(--kb-input-bg);
       border: 1px solid var(--kb-input-bd);
       border-radius: 999px;
-      padding: 0 36px;
+      padding: 0 32px;
       margin-left: 1rem;
     }
 
@@ -89,12 +89,19 @@
       background: transparent;
       outline: none;
       color: #111827;
-      font-size: .95rem;
-      padding-left: 28px;
-      padding-right: 8px;
+      font-size: .9rem;
+      padding-left: 24px;
+      padding-right: 6px;
       border-radius: 999px;
     }
     .kb-search-input::placeholder{ color: #9aa3af; }
+
+    /* remove o contorno azul padrão do input e botões da busca */
+    .kb-search-input:focus,
+    .kb-icon-btn:focus {
+      outline: none !important;
+      box-shadow: none !important;
+    }
 
     /* Conteúdo */
     .kb-container{ max-width: 1100px; }
@@ -168,6 +175,7 @@
           </button>
         </form>
 
+        <!-- Links de navegação -->
         <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
           <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
           <li class="nav-item"><a class="nav-link" href="/about/">Sobre</a></li>
@@ -187,10 +195,10 @@
                 {% endif %}
               </a>
               <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="/accounts/profile/">Meu perfil</a></li>
+                <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">Meu perfil</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
-                  <form action="/logout/" method="post" class="px-3 py-1">
+                  <form action="{% url 'accounts:logout' %}" method="post" class="px-3 py-1">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-sm btn-outline-danger w-100">Sair</button>
                   </form>
@@ -198,10 +206,15 @@
               </ul>
             </li>
           {% else %}
-            <li class="nav-item ms-lg-1"><a class="btn btn-sm btn-outline-light" href="/login/">Entrar</a></li>
-            <li class="nav-item ms-lg-1"><a class="btn btn-sm btn-outline-light" href="/register/">Registrar</a></li>
+            <li class="nav-item ms-lg-1">
+              <a class="btn btn-sm btn-outline-light" href="{% url 'accounts:login' %}">Entrar</a>
+            </li>
+            <li class="nav-item ms-lg-1">
+              <a class="btn btn-sm btn-outline-light" href="{% url 'accounts:register' %}">Registrar</a>
+            </li>
           {% endif %}
         </ul>
+
       </div>
     </div>
   </nav>

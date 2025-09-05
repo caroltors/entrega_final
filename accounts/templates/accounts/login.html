@@ -1,0 +1,100 @@
+{% extends "knowledge/base.html" %}
+{% block title %}Entrar — Base de Conhecimento{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* card e inputs no tom do site */
+  .kb-auth-card{ border:1px solid var(--kb-border); border-radius:12px; }
+  .kb-auth-card .form-control{
+    background: #fff; border:1px solid var(--kb-input-bd);
+  }
+  .kb-auth-card .form-control:focus{
+    box-shadow: 0 0 0 .2rem rgba(14,165,167,.15);
+    border-color: var(--kb-primary);
+  }
+  .kb-auth-title{ font-weight:700; }
+  .kb-auth-sub{ color: var(--kb-muted); font-size:.95rem; }
+  .kb-eye-btn{
+    border:none; background:transparent; position:absolute; right:.75rem; top:2.65rem;
+    color:#6b7280;
+  }
+  .kb-eye-btn:hover{ color:#374151 }
+
+    .btn-main {
+    background: var(--kb-dark);
+    color: #fff;
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 0.65rem;
+    font-size: 1rem;
+    transition: background-color .2s ease, transform .05s ease-in;
+    }
+    .btn-main:hover {
+    background: #1a243b;
+    color: #fff;
+    }
+    .btn-main:active {
+    transform: translateY(1px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-start align-items-lg-center" style="min-height: 60vh;">
+  <div class="w-100" style="max-width: 520px;">
+    <div class="kb-auth-card bg-white shadow-sm p-4">
+      <h1 class="h3 kb-auth-title mb-1">Entrar</h1>
+      <p class="kb-auth-sub mb-4">Acesse sua conta para criar e editar artigos.</p>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <div class="mb-3">
+          <label class="form-label">{{ form.username.label }}</label>
+          {{ form.username }}
+          {% for e in form.username.errors %}
+            <div class="invalid-feedback d-block">{{ e }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="mb-2 position-relative">
+          <label class="form-label">{{ form.password.label }}</label>
+          {{ form.password }}
+          <button type="button" class="kb-eye-btn" aria-label="Mostrar senha" id="kbTogglePwd">
+            <i class="bi bi-eye"></i>
+          </button>
+          {% for e in form.password.errors %}
+            <div class="invalid-feedback d-block">{{ e }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="d-grid mt-4">
+          <button type="submit" class="btn btn-main">
+            <i class="bi bi-box-arrow-in-right me-1"></i> Entrar
+          </button>
+        </div>
+      </form>
+
+      <p class="mt-3 mb-0 kb-auth-sub">
+        Não tem conta?
+        <a href="{% url 'accounts:register' %}">Inscrever-se</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const btn = document.getElementById('kbTogglePwd');
+    const input = document.getElementById('id_password');
+    if (btn && input){
+      btn.addEventListener('click', function(){
+        const isPwd = input.getAttribute('type') === 'password';
+        input.setAttribute('type', isPwd ? 'text' : 'password');
+        this.innerHTML = isPwd ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+      });
+    }
+  })();
+</script>
+{% endblock %}
