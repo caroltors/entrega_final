@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'ckeditor',
     "ckeditor_uploader", # para upload de imagens
     'accounts.apps.AccountsConfig',
+    'messenger.apps.MessengerConfig', # app messenger
 ]
 
 MIDDLEWARE = [

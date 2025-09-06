@@ -24,6 +24,7 @@ urlpatterns = [
     path("", include("knowledge.urls")),   # inclui as rotas do app knowledge
     path("accounts/", include("accounts.urls")),  # inclui as rotas do app accounts
     path("ckeditor/", include("ckeditor_uploader.urls")), # rotas do CKEditor
+    path("chat/", include("messenger.urls")), # rotas do app messenger
 ]
 
 # Configuração para servir arquivos de mídia em modo de desenvolvimento
