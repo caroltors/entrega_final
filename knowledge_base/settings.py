@@ -156,3 +156,12 @@ CKEDITOR_CONFIGS = {
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 CKEDITOR_UPLOAD_PATH = "uploads/"
+
+# Chat upload rules
+CHAT_MAX_FILE_MB = 15  # limite de 15 MB para anexos (não-imagem)
+CHAT_ALLOWED_FILE_EXTS = [
+    "pdf", "doc", "docx", "xls", "xlsx", "csv",
+    "ppt", "pptx", "txt", "json",
+    "zip", "rar", "7z",
+    "mp4", "mp3", "wav",
+]
