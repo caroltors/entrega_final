@@ -51,6 +51,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "accounts.middleware.EnsureProfileMiddleware",  # middleware customizado
 ]
 
 ROOT_URLCONF = 'knowledge_base.urls'
