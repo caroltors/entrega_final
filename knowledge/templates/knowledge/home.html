@@ -1,10 +1,120 @@
 {% extends "knowledge/base.html" %}
-
 {% block title %}Home — Base de Conhecimento{% endblock %}
 
+{% block extra_head %}
+<style>
+  /* Hero enxuto */
+  .kb-hero{
+    border:1px solid var(--kb-border);
+    border-radius:12px;
+    background:#fff;
+    padding:22px 18px;
+  }
+  .kb-hero h1{ font-weight:700; margin:0 0 4px; }
+
+  /* Cards */
+  .kb-card{
+    border:1px solid var(--kb-border);
+    border-radius:12px;
+    background:#fff;
+    overflow:hidden;
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  .kb-card:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(0,0,0,.06);
+    border-color:#dce1e6;
+  }
+
+  /* Capa 16:9 (fallback suave) */
+  .kb-card-cover{ position:relative; width:100%; padding-top:56.25%; background:linear-gradient(135deg,#e9eef5,#f6f8fb); }
+  .kb-card-cover img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+
+  .kb-card-body{ padding:14px; }
+  .kb-card-title{ font-size:1.05rem; font-weight:700; margin:0 0 6px; line-height:1.3; }
+  .kb-card-sub{
+    color:var(--kb-muted); font-size:.92rem; margin:0 0 10px;
+    display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .kb-meta{ color:var(--kb-muted); font-size:.8rem; }
+
+  /* Botão principal (mesmo estilo que usamos no projeto) */
+  .btn-main{
+    background:var(--kb-dark); color:#fff; font-weight:500; border-radius:6px;
+    padding:.45rem 1rem; border:none; transition:background .2s;
+  }
+  .btn-main:hover{ background:#1a243b; color:#fff; text-decoration:none; }
+
+  /* Estado vazio */
+  .kb-empty{
+    border:1px dashed var(--kb-border); border-radius:12px; padding:28px; background:#fff;
+    color:var(--kb-muted); text-align:center;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-  <div class="text-center">
-    <h1 class="mb-3">Base de Conhecimento</h1>
-    <p class="lead">Organize artigos, notas e informações em um só lugar.</p>
-  </div>
+
+  <!-- Hero simples, sem CTA duplicado lá embaixo -->
+  <section class="kb-hero mb-4">
+    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+      <div>
+        <h1>Base de Conhecimento</h1>
+        <p class="mb-0 text-muted">Artigos, guias e notas — tudo em um só lugar.</p>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{% url 'knowledge:pages_list' %}" class="btn btn-secondary">
+          Ver todos os artigos
+        </a>
+        {% if user.is_authenticated %}
+          <a href="{% url 'knowledge:page_create' %}" class="btn btn-main">
+            Novo artigo
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+
+  {% if latest %}
+    <section>
+      <div class="row g-3">
+        {% for article in latest %}
+          <div class="col-12 col-sm-6 col-lg-4">
+            <article class="kb-card h-100">
+              <a href="{% url 'knowledge:page_detail' article.pk %}" class="text-decoration-none">
+                <div class="kb-card-cover">
+                  {% if article.cover_image %}
+                    <img src="{{ article.cover_image.url }}" alt="{{ article.title }}">
+                  {% endif %}
+                </div>
+              </a>
+              <div class="kb-card-body">
+                <a href="{% url 'knowledge:page_detail' article.pk %}" class="text-decoration-none">
+                  <h3 class="kb-card-title">{{ article.title }}</h3>
+                </a>
+                {% if article.subtitle %}
+                  <div class="kb-card-sub">{{ article.subtitle }}</div>
+                {% endif %}
+                <div class="kb-meta">
+                  {{ article.author.get_full_name|default:article.author.username }} ·
+                  {{ article.created_at|date:"d/m/Y" }}
+                </div>
+              </div>
+            </article>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  {% else %}
+    <div class="kb-empty">
+      <p class="mb-2">Ainda não há páginas.</p>
+      {% if user.is_authenticated %}
+        <a href="{% url 'knowledge:page_create' %}" class="btn btn-main">Criar primeiro artigo</a>
+      {% else %}
+        <a href="{% url 'accounts:login' %}" class="btn btn-main">Entrar para criar</a>
+      {% endif %}
+    </div>
+  {% endif %}
+
 {% endblock %}

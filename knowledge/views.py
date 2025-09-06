@@ -1,10 +1,11 @@
 from django.shortcuts import render
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from .models import Article
 from .forms import ArticleForm
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse, reverse_lazy
+from django.db.models import Q
 
 # Create your views here.
 class ArticleListView(ListView):
@@ -70,3 +71,21 @@ class ArticleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         article = self.get_object()
         messages.success(request, f'O artigo "{article.title}" foi excluído com sucesso.')
         return super().delete(request, *args, **kwargs)
+    
+# View para a página inicial com artigos recentes e busca
+class HomeView(TemplateView):
+    template_name = "knowledge/home.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        q = self.request.GET.get("q", "").strip()
+        qs = Article.objects.all().order_by("-created_at")
+        if q:
+            qs = qs.filter(
+                Q(title__icontains=q) |
+                Q(subtitle__icontains=q) |
+                Q(content__icontains=q)
+            )
+        ctx["latest"] = list(qs[:6])   # mostra 6 na home
+        ctx["query"] = q
+        return ctx
