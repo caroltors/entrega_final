@@ -68,6 +68,15 @@
       color: var(--kb-text);
     }
 
+    /* CKEditor: ocupar 100% da largura do container */
+    .django-ckeditor-widget{ display:block !important; width:100% !important; }
+    .cke{ width:100% !important; }
+    .cke_chrome, .cke_inner{ width:100% !important; }
+    .cke_contents iframe{ width:100% !important; display:block !important; }
+
+    /* altura mínima confortável */
+    .cke_contents{ min-height: 480px !important; }
+
     /* Capa */
     .kb-cover{
       display: flex;
