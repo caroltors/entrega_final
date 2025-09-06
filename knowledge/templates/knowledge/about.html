@@ -1,8 +1,46 @@
 {% extends "knowledge/base.html" %}
 
+{% load static %} 
 {% block title %}Sobre — Base de Conhecimento{% endblock %}
 
 {% block content %}
-  <h1 class="mb-3">Sobre mim</h1>
-  <p>Incluir sobre mim conforme requisitos.</p>
+<div class="container" style="max-width: 900px;">
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <img src="{% static 'knowledge/images/me.jpg' %}"
+            alt="its_me" 
+            class="rounded-circle" 
+            style="width:80px; height:80px; object-fit:cover;">
+        <div>
+          <h2 class="h4 mb-1">Sobre mim</h2>
+          <p class="text-muted mb-0">Analista de Sustentação Pleno • Foco em sistemas, dados e documentação</p>
+        </div>
+      </div>
+      <hr>
+
+      <p>
+        Sou <strong>Analista de Sustentação Pleno</strong>, atuando com monitoramento e manutenção de sistemas críticos, 
+        análise de incidentes, SQL e suporte a times de desenvolvimento e negócios.
+      </p>
+
+      <p>
+        Tenho experiência em <strong>SQL, bancos relacionais (Oracle, PostgreSQL, MongoDB)</strong>, 
+        <strong>infraestrutura em AWS e OpenShift</strong> e práticas de <strong>CI/CD e versionamento com GitLab</strong>.  
+        Também estou em constante aprendizado em <strong>Python e Django</strong>, aplicando esses conhecimentos para 
+        melhorar processos e automações no dia a dia.
+      </p>
+
+      <p>
+        Minha motivação é unir <strong>sustentação técnica</strong> e <strong>documentação de qualidade</strong>, 
+        garantindo estabilidade das aplicações e organização do conhecimento para o time.
+      </p>
+
+      <div class="alert alert-secondary mt-3 mb-0">
+        🚀 Esta base de conhecimento reflete meu compromisso com <strong>organização</strong>, 
+        <strong>aprendizado contínuo</strong> e <strong>compartilhamento de conhecimento</strong>.
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
