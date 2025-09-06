@@ -1,16 +1,408 @@
 {% extends "knowledge/base.html" %}
+{% load messenger_extras %} {# para o filtro short_body #}
 
 {% block title %}Chat — Knowledge Base{% endblock %}
 
 {% block content %}
 <div class="kb-edit-shell">
-  <div class="mb-3">
-    <h1 class="h3 mb-1">Chat</h1>
-    <p class="text-muted mb-0">Converse com outros usuários.</p>
-  </div>
+  <h1 class="h3 mb-1">Chat</h1>
+  <p class="text-muted mb-3">Converse com outros usuários.</p>
 
-  <div class="alert alert-info" role="alert">
-    Nenhuma conversa encontrada ainda.
+  <div class="row g-3">
+    <!-- Sidebar -->
+    <div class="col-12 col-md-4 col-lg-3">
+      <!-- Nova conversa -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <form action="{% url 'messenger:chat_new' %}" method="get">
+            <label for="username" class="form-label small text-muted mb-1">Iniciar nova conversa</label>
+            <input id="username" name="username" class="form-control" placeholder="Buscar pessoas (username)"
+                   list="userlist" required>
+            <datalist id="userlist">
+              {% for u in users %}
+                <option value="{{ u.username }}">{{ u.get_full_name|default:u.username }}</option>
+              {% endfor %}
+            </datalist>
+            <button class="btn btn-dark w-100 mt-2" type="submit">Iniciar conversa</button>
+          </form>
+
+          <!-- Fallback por link -->
+          <div class="mt-3">
+            <div class="small text-muted mb-1">Ou selecione abaixo:</div>
+            <div class="list-group small" style="max-height: 20vh; overflow-y: auto;">
+              {% for u in users %}
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                   href="{% url 'messenger:chat_new' %}?username={{ u.username }}">
+                  <span>{{ u.get_full_name|default:u.username }} <span class="text-muted">@{{ u.username }}</span></span>
+                  <i class="bi bi-arrow-right-short"></i>
+                </a>
+              {% empty %}
+                <div class="list-group-item text-muted">Não há outros usuários disponíveis.</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conversas -->
+      <div class="card">
+        <div class="card-header py-2">
+          <div class="fw-semibold small">Conversas</div>
+        </div>
+        <div class="list-group list-group-flush" style="max-height: 60vh; overflow-y: auto;">
+          {% if threads %}
+            {% for t in threads %}
+              <a href="{% url 'messenger:chat_list' %}?t={{ t.pk }}"
+                 class="list-group-item list-group-item-action {% if active_thread and active_thread.pk == t.pk %}active text-white{% endif %}">
+                <div class="fw-semibold">{{ t.other_display }}</div>
+                <div class="small {% if active_thread and active_thread.pk == t.pk %}text-white-50{% else %}text-muted{% endif %}">
+                  {% if t.last_message %}
+                    {{ t.last_message.author.username }}: {{ t.last_message.short_body }}
+                  {% else %}
+                    Sem mensagens ainda.
+                  {% endif %}
+                </div>
+              </a>
+            {% endfor %}
+          {% else %}
+            <div class="list-group-item text-muted small">Nenhuma conversa encontrada ainda.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Painel (detalhe) -->
+    <div class="col-12 col-md-8 col-lg-9">
+      <div class="card">
+        <!-- altura fixa + layout em coluna -->
+        <div class="card-body d-flex flex-column" style="height:70vh;">
+          {% if active_thread %}
+            <h2 class="h5 mb-3 d-flex justify-content-between align-items-center">
+              <span>
+                Conversa com
+                {% for u in other_participants %}
+                  {{ u.get_full_name|default:u.username }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                  (você)
+                {% endfor %}
+              </span>
+              <form action="{% url 'messenger:chat_delete' active_thread.pk %}" method="post"
+                    onsubmit="return confirm('Excluir esta conversa para todos os participantes?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger btn-sm">Excluir</button>
+              </form>
+            </h2>
+
+            {% with last=active_thread.messages.last %}
+            <div id="chat-scroll"
+                 class="mb-3 flex-grow-1"
+                 style="overflow-y:auto;"
+                 data-thread-id="{{ active_thread.pk }}"
+                 data-last-id="{% if last %}{{ last.pk }}{% else %}0{% endif %}">
+              {% for m in active_thread.messages.all %}
+                <div class="d-flex mb-2 {% if m.author_id == request.user.id %}justify-content-end{% endif %}">
+                  {% if m.author_id != request.user.id %}
+                    <div class="me-2">
+                      {% if m.author.profile and m.author.profile.avatar %}
+                        <img src="{{ m.author.profile.avatar.url }}" alt="avatar"
+                             class="rounded-circle" style="width:36px;height:36px;object-fit:cover;">
+                      {% else %}
+                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
+                             style="width:36px;height:36px;">
+                          {{ m.author.get_full_name|default:m.author.username|first|upper }}
+                        </div>
+                      {% endif %}
+                    </div>
+                  {% endif %}
+
+                  <div class="p-2 rounded {% if m.author_id == request.user.id %}bg-dark text-white{% else %}bg-light{% endif %}"
+                       style="max-width:70%;">
+                    <div class="small fw-semibold mb-1">{{ m.author.get_full_name|default:m.author.username }}</div>
+
+                    {% if m.body %}
+                      <div>{{ m.body|linebreaksbr }}</div>
+                    {% endif %}
+
+                    {% if m.image %}
+                      <div class="mt-2">
+                        <a href="{{ m.image.url }}" target="_blank" rel="noopener">
+                          <img src="{{ m.image.url }}" class="img-fluid rounded"
+                               style="max-width:240px;max-height:240px;object-fit:cover;" alt="imagem">
+                        </a>
+                      </div>
+                    {% endif %}
+
+                    {% if m.attachment %}
+                      <div class="mt-2 d-flex align-items-center gap-2">
+                        <i class="bi {{ m.attachment.name|file_icon }}"></i>
+                        <a href="{{ m.attachment.url }}" target="_blank" rel="noopener" class="text-decoration-none">
+                          {{ m.attachment.name|basename }}
+                        </a>
+                        <span class="small {% if m.author_id == request.user.id %}text-white-50{% else %}text-muted{% endif %}">
+                          {{ m.attachment.size|filesize }}
+                        </span>
+                      </div>
+                    {% endif %}
+
+                    <div class="small {% if m.author_id == request.user.id %}text-white-50{% else %}text-muted{% endif %} mt-1">
+                      {{ m.created_at|date:"d/m/Y H:i" }}
+                    </div>
+                  </div>
+
+                  {% if m.author_id == request.user.id %}
+                    <div class="ms-2">
+                      {% if request.user.profile and request.user.profile.avatar %}
+                        <img src="{{ request.user.profile.avatar.url }}" alt="avatar"
+                             class="rounded-circle" style="width:36px;height:36px;object-fit:cover;">
+                      {% else %}
+                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
+                             style="width:36px;height:36px;">
+                          {{ request.user.get_full_name|default:request.user.username|first|upper }}
+                        </div>
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                </div>
+              {% empty %}
+                <p class="text-muted mb-0">Sem mensagens ainda.</p>
+              {% endfor %}
+            </div>
+            {% endwith %}
+
+            <!-- Form docked no rodapé -->
+            <form method="post" id="chat-form" class="mt-auto" enctype="multipart/form-data">
+              {% csrf_token %}
+              <input type="hidden" name="t" value="{{ active_thread.pk }}">
+
+              <div class="input-group">
+                {{ form.body }}
+                <!-- inputs invisíveis -->
+                <input type="file" name="image" id="chat-image" class="d-none" accept="image/*">
+                <input type="file" name="attachment" id="chat-file" class="d-none">
+
+              <!-- botões ícones (flat, sem borda/outline) -->
+              <button
+                type="button"
+                id="pick-image"
+                class="btn border-0 bg-transparent shadow-none px-3"
+                style="outline:0"
+                title="Enviar imagem"
+                aria-label="Enviar imagem">
+                <i class="bi bi-image fs-5"></i>
+              </button>
+              <button
+                type="button"
+                id="pick-file"
+                class="btn border-0 bg-transparent shadow-none px-3"
+                style="outline:0"
+                title="Enviar anexo"
+                aria-label="Enviar anexo">
+                <i class="bi bi-paperclip fs-5"></i>
+              </button>
+                <button class="btn btn-dark" type="submit">Enviar</button>
+              </div>
+
+              <!-- chips de preview -->
+              <div class="d-flex flex-wrap gap-2 mt-2">
+                <div id="img-chip" class="d-flex align-items-center gap-2 d-none border rounded px-2 py-1">
+                  <img id="img-chip-thumb" src="" alt="Prévia" class="rounded" style="width:36px;height:36px;object-fit:cover;">
+                  <span id="img-chip-name" class="small text-muted"></span>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="img-clear" title="Remover">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+
+                <div id="file-chip" class="d-flex align-items-center gap-2 d-none border rounded px-2 py-1">
+                  <i class="bi bi-paperclip"></i>
+                  <span id="file-chip-name" class="small text-muted"></span>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="file-clear" title="Remover">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+              </div>
+            </form>
+          {% else %}
+            <h2 class="h5 mb-2">Selecione uma conversa</h2>
+            <p class="text-muted mb-0">Escolha uma conversa na coluna da esquerda ou inicie uma nova pelo campo “Iniciar nova conversa”.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
   </div>
 </div>
+
+<script>
+(function () {
+  const box  = document.getElementById('chat-scroll');
+  const form = document.getElementById('chat-form');
+
+  // rolar para o final ao abrir
+  if (box) { box.scrollTop = box.scrollHeight; }
+
+  // Enter envia; Shift+Enter quebra linha
+  const textarea = form ? form.querySelector('textarea[name="body"]') : null;
+  if (textarea) {
+    textarea.style.height = '56px';
+    textarea.style.resize = 'none';
+    textarea.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        form.submit();
+      }
+    });
+  }
+
+  // -------- Upload: imagem e arquivo (chips) ----------
+  const pickImage = document.getElementById('pick-image');
+  const pickFile  = document.getElementById('pick-file');
+  const imageInp  = document.getElementById('chat-image');
+  const fileInp   = document.getElementById('chat-file');
+
+  const imgChip   = document.getElementById('img-chip');
+  const imgThumb  = document.getElementById('img-chip-thumb');
+  const imgName   = document.getElementById('img-chip-name');
+  const imgClear  = document.getElementById('img-clear');
+
+  const fileChip  = document.getElementById('file-chip');
+  const fileName  = document.getElementById('file-chip-name');
+  const fileClear = document.getElementById('file-clear');
+
+  if (pickImage) pickImage.addEventListener('click', () => imageInp && imageInp.click());
+  if (pickFile)  pickFile.addEventListener('click',  () => fileInp  && fileInp.click());
+
+  function clearImg() {
+    if (imageInp) imageInp.value = '';
+    if (imgChip) imgChip.classList.add('d-none');
+    if (imgThumb) imgThumb.src = ''; if (imgName) imgName.textContent = '';
+  }
+  function clearFile() {
+    if (fileInp) fileInp.value = '';
+    if (fileChip) fileChip.classList.add('d-none');
+    if (fileName) fileName.textContent = '';
+  }
+
+  if (imageInp) {
+    imageInp.addEventListener('change', function () {
+      const f = this.files && this.files[0];
+      if (!f) return clearImg();
+      if (!f.type || !f.type.startsWith('image/')) { alert('Selecione uma imagem.'); return clearImg(); }
+      if (f.size > 5 * 1024 * 1024) { alert('Imagem muito grande (máx. 5 MB).'); return clearImg(); }
+      imgThumb.src = URL.createObjectURL(f);
+      imgName.textContent = f.name;
+      imgChip.classList.remove('d-none');
+    });
+  }
+  if (fileInp) {
+    fileInp.addEventListener('change', function () {
+      const f = this.files && this.files[0];
+      if (!f) return clearFile();
+      if (f.size > 15 * 1024 * 1024) { alert('Arquivo muito grande (máx. 15 MB).'); return clearFile(); }
+      fileName.textContent = f.name;
+      fileChip.classList.remove('d-none');
+    });
+  }
+  if (imgClear)  imgClear.addEventListener('click', clearImg);
+  if (fileClear) fileClear.addEventListener('click', clearFile);
+
+  // --- Polling de novas mensagens (a cada 5s) ---
+  if (!box) return;
+  const threadId = box.dataset.threadId;
+  let lastId = parseInt(box.dataset.lastId || '0');
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, (c) =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])
+    );
+  }
+
+  function iconFor(ext) {
+  const map = {
+    pdf:"bi-filetype-pdf", doc:"bi-filetype-doc", docx:"bi-filetype-docx",
+    xls:"bi-filetype-xls", xlsx:"bi-filetype-xlsx", csv:"bi-filetype-csv",
+    ppt:"bi-filetype-ppt", pptx:"bi-filetype-pptx",
+    zip:"bi-file-zip", rar:"bi-file-zip", "7z":"bi-file-zip",
+    mp4:"bi-filetype-mp4", mp3:"bi-filetype-mp3", wav:"bi-filetype-wav",
+    txt:"bi-filetype-txt", json:"bi-filetype-json"
+  };
+  return map[ext] || "bi-paperclip";
+}
+
+// opcional: formata bytes (use se quiser mostrar tamanho vindo da API)
+function formatSize(bytes) {
+  if (!bytes && bytes !== 0) return "";
+  const units = ["B","KB","MB","GB","TB"];
+  let b = Number(bytes), i = 0;
+  while (b >= 1024 && i < units.length-1) { b /= 1024; i++; }
+  return `${b.toFixed(1)} ${units[i]}`;
+}
+
+  function renderMessage(m) {
+    const isSelf = !!m.is_self;
+    const bubbleClass = isSelf ? 'bg-dark text-white' : 'bg-light';
+    const tsClass = isSelf ? 'text-white-50' : 'text-muted';
+
+    const leftAvatar = !isSelf ? (
+      m.avatar
+        ? `<img src="${m.avatar}" alt="avatar" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;">`
+        : `<div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
+             style="width:36px;height:36px;">${escapeHtml(m.author.charAt(0).toUpperCase())}</div>`
+    ) : '';
+
+    const textHtml  = m.body ? `<div>${escapeHtml(m.body).replace(/\n/g,'<br>')}</div>` : '';
+    const imageHtml = m.image ? `
+      <div class="mt-2">
+        <a href="${m.image}" target="_blank" rel="noopener">
+          <img src="${m.image}" class="img-fluid rounded"
+               style="max-width:240px;max-height:240px;object-fit:cover;" alt="imagem">
+        </a>
+      </div>` : '';
+      const fileHtml  = m.attachment ? (() => {
+        const name = m.attachment.name || "arquivo";
+        const ext  = (name.split(".").pop() || "").toLowerCase();
+        const icon = iconFor(ext);
+        // se você adicionar "size" na API (ver nota abaixo), descomente a linha sizeLabel
+        // const sizeLabel = m.attachment.size ? ` <span class="small ${tsClass}">${formatSize(m.attachment.size)}</span>` : "";
+        return `
+          <div class="mt-2 d-flex align-items-center gap-2">
+            <i class="bi ${icon}"></i>
+            <a href="${m.attachment.url}" target="_blank" rel="noopener" class="text-decoration-none">
+              ${escapeHtml(name)}
+            </a>
+            ${"" /* sizeLabel */}
+          </div>`;
+      })() : '';
+
+    return `
+      <div class="d-flex mb-2 ${isSelf ? 'justify-content-end' : ''}">
+        ${!isSelf ? `<div class="me-2">${leftAvatar}</div>` : ''}
+        <div class="p-2 rounded ${bubbleClass}" style="max-width:70%;">
+          <div class="small fw-semibold mb-1">${escapeHtml(m.author)}</div>
+          ${textHtml}${imageHtml}${fileHtml}
+          <div class="small ${tsClass} mt-1">${escapeHtml(m.created_at)}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  async function poll() {
+    try {
+      if (!threadId) return;
+      const res = await fetch(`/chat/api/${threadId}/messages/?after=${lastId}`, {credentials: 'same-origin'});
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data.messages) && data.messages.length) {
+        const atBottom = (box.scrollTop + box.clientHeight) >= (box.scrollHeight - 10);
+        let html = '';
+        for (const m of data.messages) {
+          html += renderMessage(m);
+          lastId = Math.max(lastId, m.id);
+        }
+        box.insertAdjacentHTML('beforeend', html);
+        if (atBottom) box.scrollTop = box.scrollHeight;
+      }
+    } catch (_) { /* silencioso */ }
+  }
+  setInterval(poll, 5000);
+})();
+</script>
 {% endblock %}
