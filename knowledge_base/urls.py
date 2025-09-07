@@ -18,13 +18,18 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from ckeditor_uploader import views as ck_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("", include("knowledge.urls")),   # inclui as rotas do app knowledge
     path("accounts/", include("accounts.urls")),  # inclui as rotas do app accounts
-    path("ckeditor/", include("ckeditor_uploader.urls")), # rotas do CKEditor
+    # path("ckeditor/", include("ckeditor_uploader.urls")), # rotas do CKEditor
     path("chat/", include("messenger.urls")), # rotas do app messenger
+    # CKEditor: upload/browse apenas para usuários logados
+    path("ckeditor/upload/", login_required(ck_views.upload), name="ckeditor_upload"),
+    path("ckeditor/browse/", login_required(ck_views.browse), name="ckeditor_browse"),
 ]
 
 # Configuração para servir arquivos de mídia em modo de desenvolvimento
